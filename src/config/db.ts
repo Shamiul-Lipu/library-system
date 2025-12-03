@@ -7,7 +7,7 @@ export const pool = new Pool({
 
 export const initDB = async () => {
   try {
-    // Users table
+    // USERS TABLE
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
@@ -17,35 +17,37 @@ export const initDB = async () => {
         role VARCHAR(50) NOT NULL DEFAULT 'USER',
         created_at TIMESTAMP DEFAULT now(),
         updated_at TIMESTAMP DEFAULT now()
-      )
+      );
     `);
 
-    // Books table
+    // BOOKS TABLE
     await pool.query(`
       CREATE TABLE IF NOT EXISTS books (
         id SERIAL PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
         author VARCHAR(255) NOT NULL,
-        genre VARCHAR(50) CHECK (genre IN ('FICTION','NON_FICTION','SCIENCE','HISTORY','BIOGRAPHY','FANTASY')),
+        genre VARCHAR(50) NOT NULL CHECK (
+          genre IN ('FICTION','NON_FICTION','SCIENCE','HISTORY','BIOGRAPHY','FANTASY')
+        ),
         description TEXT,
         copies INT NOT NULL CHECK (copies >= 0),
         available BOOLEAN DEFAULT true,
         created_at TIMESTAMP DEFAULT now(),
         updated_at TIMESTAMP DEFAULT now()
-      )
+      );
     `);
 
-    // Borrows table
+    // BORROWS TABLE
     await pool.query(`
       CREATE TABLE IF NOT EXISTS borrows (
         id SERIAL PRIMARY KEY,
-        book INT REFERENCES books(id) ON DELETE CASCADE,
-        user INT REFERENCES users(id) ON DELETE CASCADE,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        book_id INT REFERENCES books(id) ON DELETE CASCADE,
         quantity INT NOT NULL CHECK (quantity > 0),
         due_date DATE NOT NULL,
         created_at TIMESTAMP DEFAULT now(),
         updated_at TIMESTAMP DEFAULT now()
-      )
+      );
     `);
 
     console.log("✅ All tables initialized successfully");

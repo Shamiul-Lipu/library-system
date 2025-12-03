@@ -1,9 +1,15 @@
 import express from "express";
+import { initDB } from "./config/db";
 
 const app = express();
 
 // Parse incoming JSON requests so you can access req.body
 app.use(express.json());
+
+// DB init
+initDB()
+  .then(() => console.log("✅ Database initialized successfully"))
+  .catch((err) => console.error("❌ DB initialization failed:", err));
 
 // Root route(test)
 app.get("/", (req, res) => {

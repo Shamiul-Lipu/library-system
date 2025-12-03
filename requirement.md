@@ -1,169 +1,193 @@
-📚 Library Management System – Final Requirement
-Goal
+# 📚 Library Management System
 
-Build a modular, secure, and fully functional library management system with users, books, and borrowing functionality. Include authentication, role-based authorization, validation, and business logic.
+A modular, secure, and fully functional system for managing users, books, and borrow operations. Includes authentication, authorization, validation, and business logic.
 
-1️⃣ Users Module (Authentication & Authorization)
+---
 
-Table: users
-Fields:
+## 🚀 Goal
 
-Column Type Constraints Description
-id UUID PK, default gen_random_uuid() Unique user identifier
-name VARCHAR(255) NOT NULL Full name of user
-email VARCHAR(255) NOT NULL, UNIQUE User’s email
-password VARCHAR(255) NOT NULL Hashed password
-role VARCHAR(50) NOT NULL, DEFAULT 'USER' Role of the user (USER or ADMIN)
-created_at TIMESTAMP DEFAULT now() Account creation time
-updated_at TIMESTAMP DEFAULT now() Last account update
+Build a complete library system with:
 
-Business Logic:
+- User authentication (JWT)
+- Role-based authorization (USER, ADMIN)
+- CRUD operations for books
+- Borrowing system with validation and stock handling
+- Modular architecture with clean separation of concerns
 
-Passwords are hashed with bcrypt.
+---
 
-JWT tokens are issued on login for authentication.
+## 1️⃣ Users Module (Authentication & Authorization)
 
-Role-based authorization:
+### **Users Table**
 
-USER → can borrow books and see own borrow history
+| Column     | Type         | Constraints                     | Description              |
+| ---------- | ------------ | ------------------------------- | ------------------------ |
+| id         | UUID         | PK, default `gen_random_uuid()` | Unique user identifier   |
+| name       | VARCHAR(255) | NOT NULL                        | Full name                |
+| email      | VARCHAR(255) | NOT NULL, UNIQUE                | User email               |
+| password   | VARCHAR(255) | NOT NULL                        | Hashed password          |
+| role       | VARCHAR(50)  | NOT NULL, default `'USER'`      | Role (`USER` or `ADMIN`) |
+| created_at | TIMESTAMP    | DEFAULT now()                   | Created timestamp        |
+| updated_at | TIMESTAMP    | DEFAULT now()                   | Last update timestamp    |
 
-ADMIN → can manage books and view all borrows
+### **Business Logic**
 
-API Endpoints:
+- Passwords hashed using **bcrypt**
+- **JWT tokens** issued on login
+- Role-based access:
 
-Method Endpoint Description Auth
-POST /api/users/register Register a new user No
-POST /api/users/login Login user & return JWT No
-GET /api/users/me Get logged-in user profile Yes
-2️⃣ Books Module
+  - **USER** → borrow books, see own history
+  - **ADMIN** → manage books, view all borrows
 
-Table: books
-Fields:
+### **API Endpoints**
 
-Column Type Constraints Description
-id UUID PK, default gen_random_uuid() Unique book identifier
-title VARCHAR(255) NOT NULL Book title
-author VARCHAR(255) NOT NULL Book author
-genre VARCHAR(50) CHECK genre IN ('FICTION','NON_FICTION','SCIENCE','HISTORY','BIOGRAPHY','FANTASY') Book genre
-isbn VARCHAR(100) NOT NULL, UNIQUE International Standard Book Number
-description TEXT Optional description
-copies INT NOT NULL, CHECK copies >= 0 Total copies available
-available BOOLEAN DEFAULT true If the book is available for borrow
-created_at TIMESTAMP DEFAULT now() Book creation timestamp
-updated_at TIMESTAMP DEFAULT now() Last book update
+| Method | Endpoint              | Description                | Auth |
+| ------ | --------------------- | -------------------------- | ---- |
+| POST   | `/api/users/register` | Register a new user        | No   |
+| POST   | `/api/users/login`    | Login & receive JWT        | No   |
+| GET    | `/api/users/me`       | Get logged-in user profile | Yes  |
 
-Business Logic:
+---
 
-Automatically update available field: if copies = 0 → available = false.
+## 2️⃣ Books Module
 
-Only ADMIN can create, update, or delete books.
+### **Books Table**
 
-Prevent deletion if the book has active borrow records.
+| Column      | Type         | Constraints                                                                                       | Description            |
+| ----------- | ------------ | ------------------------------------------------------------------------------------------------- | ---------------------- |
+| id          | UUID         | PK, default `gen_random_uuid()`                                                                   | Unique book ID         |
+| title       | VARCHAR(255) | NOT NULL                                                                                          | Book title             |
+| author      | VARCHAR(255) | NOT NULL                                                                                          | Book author            |
+| genre       | VARCHAR(50)  | CHECK in predefined list (`FICTION`, `NON_FICTION`, `SCIENCE`, `HISTORY`, `BIOGRAPHY`, `FANTASY`) | Book genre             |
+| isbn        | VARCHAR(100) | NOT NULL, UNIQUE                                                                                  | ISBN                   |
+| description | TEXT         | Optional                                                                                          | Description            |
+| copies      | INT          | NOT NULL, CHECK `copies >= 0`                                                                     | Total available copies |
+| available   | BOOLEAN      | DEFAULT true                                                                                      | Availability status    |
+| created_at  | TIMESTAMP    | DEFAULT now()                                                                                     | Created timestamp      |
+| updated_at  | TIMESTAMP    | DEFAULT now()                                                                                     | Updated timestamp      |
 
-API Endpoints:
+### **Business Logic**
 
-Method Endpoint Description Auth
-POST /api/books Create a new book ADMIN
-GET /api/books Get all books (filter, sort, limit) PUBLIC
-GET /api/books/:id Get book by ID PUBLIC
-PUT /api/books/:id Update book details ADMIN
-DELETE /api/books/:id Delete book ADMIN
-3️⃣ Borrows Module
+- `available = false` automatically when `copies = 0`
+- Only **ADMIN** can create/update/delete books
+- Prevent deletion if active borrow records exist
 
-Table: borrows
-Fields:
+### **API Endpoints**
 
-Column Type Constraints Description
-id UUID PK, default gen_random_uuid() Unique borrow identifier
-book UUID FK references books(id) Book being borrowed
-user UUID FK references users(id) User borrowing the book
-quantity INT NOT NULL, CHECK quantity > 0 Number of copies borrowed
-due_date DATE NOT NULL Date the book must be returned
-created_at TIMESTAMP DEFAULT now() Borrow record creation timestamp
-updated_at TIMESTAMP DEFAULT now() Last update timestamp
+| Method | Endpoint         | Description                       | Auth   |
+| ------ | ---------------- | --------------------------------- | ------ |
+| POST   | `/api/books`     | Create a new book                 | ADMIN  |
+| GET    | `/api/books`     | Get all books (filter/sort/limit) | PUBLIC |
+| GET    | `/api/books/:id` | Get book by ID                    | PUBLIC |
+| PUT    | `/api/books/:id` | Update a book                     | ADMIN  |
+| DELETE | `/api/books/:id` | Delete a book                     | ADMIN  |
 
-Business Logic:
+---
 
-Check available copies before borrowing.
+## 3️⃣ Borrows Module
 
-Deduct borrowed quantity from books.copies.
+### **Borrows Table**
 
-If copies = 0 → available = false.
+| Column     | Type      | Constraints                     | Description       |
+| ---------- | --------- | ------------------------------- | ----------------- |
+| id         | UUID      | PK, default `gen_random_uuid()` | Borrow ID         |
+| book       | UUID      | FK → books(id)                  | Book borrowed     |
+| user       | UUID      | FK → users(id)                  | Borrowing user    |
+| quantity   | INT       | NOT NULL, CHECK `quantity > 0`  | Quantity borrowed |
+| due_date   | DATE      | NOT NULL                        | Return deadline   |
+| created_at | TIMESTAMP | DEFAULT now()                   | Created timestamp |
+| updated_at | TIMESTAMP | DEFAULT now()                   | Updated timestamp |
 
-Only logged-in users can borrow books.
+### **Business Logic**
 
-Optional: limit max books per user, handle overdue books.
+- Check available copies before borrowing
+- Deduct borrowed quantity from `books.copies`
+- If `copies = 0` → set `available = false`
+- Only logged-in users can borrow
+- _(Optional)_ limit max borrows per user
+- _(Optional)_ overdue handling
 
-API Endpoints:
+### **API Endpoints**
 
-Method Endpoint Description Auth
-POST /api/borrows Borrow a book USER
-GET /api/borrows Get summary of borrowed books ADMIN
+| Method | Endpoint       | Description          | Auth  |
+| ------ | -------------- | -------------------- | ----- |
+| POST   | `/api/borrows` | Borrow a book        | USER  |
+| GET    | `/api/borrows` | All borrowed summary | ADMIN |
 
-Aggregation / Reports:
+### **Reports / Aggregations**
 
-Total borrowed quantity per book.
+- Total borrowed quantity per book
+- Active borrows per user
+- Overdue borrows _(optional)_
 
-Active borrows per user.
+---
 
-Overdue borrows (optional).
+## 4️⃣ Error Handling
 
-4️⃣ Error Handling
+### **Standard Error Response**
 
-All endpoints return a consistent error format:
-
+```json
 {
-"success": false,
-"message": "Validation failed",
-"error": { ...details }
+  "success": false,
+  "message": "Validation failed",
+  "error": {}
 }
+```
 
-Validate request data at service or middleware level.
+### Rules
 
-Return 404 for missing resources, 401 for unauthorized, 403 for forbidden.
+- Validate all input in services/middleware
+- Return proper HTTP codes:
 
-5️⃣ Modular Architecture
+  - **404** → Not found
+  - **401** → Unauthorized
+  - **403** → Forbidden
 
-Project Structure (example):
+---
 
+## 5️⃣ Modular Architecture
+
+### **Suggested Structure**
+
+```
 src/
 ├─ config/
-│ └─ db.ts # DB connection
+│   ├─ db.ts               # Database connection
+|   └─ index.ts
 ├─ modules/
-│ ├─ users/
-│ │ ├─ user.model.ts
-│ │ ├─ user.service.ts
-│ │ ├─ user.controller.ts
-│ │ └─ user.routes.ts
-│ ├─ books/
-│ │ ├─ book.model.ts
-│ │ ├─ book.service.ts
-│ │ ├─ book.controller.ts
-│ │ └─ book.routes.ts
-│ └─ borrows/
-│ ├─ borrow.model.ts
-│ ├─ borrow.service.ts
-│ ├─ borrow.controller.ts
-│ └─ borrow.routes.ts
+│   ├─ users/
+│   │   ├─ user.model.ts
+│   │   ├─ user.service.ts
+│   │   ├─ user.controller.ts
+│   │   └─ user.routes.ts
+│   ├─ books/
+│   │   ├─ book.model.ts
+│   │   ├─ book.service.ts
+│   │   ├─ book.controller.ts
+│   │   └─ book.routes.ts
+│   └─ borrows/
+│       ├─ borrow.model.ts
+│       ├─ borrow.service.ts
+│       ├─ borrow.controller.ts
+│       └─ borrow.routes.ts
 ├─ middlewares/
-│ ├─ auth.middleware.ts
-│ └─ error.middleware.ts
+│   ├─ auth.middleware.ts
+│   └─ error.middleware.ts
 └─ server.ts
+```
 
-Each module contains model, service, controller, routes.
+- Each module has **model**, **service**, **controller**, **routes**
+- `server.ts` sets up Express, middleware, routing
+- Auth middleware enforces role-based access
 
-server.ts sets up Express, middlewares, and routes.
+---
 
-Auth middleware protects routes and enforces role-based access.
+## 6️⃣ Bonus / Extra Features
 
-6️⃣ Bonus / Extra Features
+- Soft deletes for books (`deleted_at`)
+- Transactions for multi-book borrow
+- Refresh token support
+- Logging & metrics
+- Unit + integration tests
 
-Soft deletes for books (deleted_at).
-
-Transactions for multi-book borrow.
-
-Optional refresh tokens.
-
-Request logging and metrics.
-
-Unit & integration tests.
+---
